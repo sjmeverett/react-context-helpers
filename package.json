@@ -1,0 +1,52 @@
+{
+  "name": "react-context-helpers",
+  "version": "1.0.0",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
+  "scripts": {
+    "test": "ava dist/test/**/*.js",
+    "prepublish": "grunt"
+  },
+  "author": "Stewart Mackenzie-Leigh",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/enzyme": "^2.8.0",
+    "@types/lodash": "^4.14.64",
+    "@types/node": "^6.0.58",
+    "ava": "^0.17.0",
+    "enzyme": "^2.8.2",
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-ts": "^6.0.0-beta.15",
+    "jsdom": "^9.12.0",
+    "jsdom-global": "^2.1.1",
+    "load-grunt-tasks": "^3.5.2",
+    "react-addons-test-utils": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "typescript": "^2.3.2"
+  },
+  "dependencies": {
+    "@types/prop-types": "^15.5.1",
+    "@types/react": "^15.0.24",
+    "lodash": "^4.17.4",
+    "prop-types": "^15.5.9",
+    "react": "^15.5.4",
+    "react-display-name": "^0.2.0"
+  },
+  "description": "Helpers to convert from props to context and back again",
+  "keywords": [
+    "react",
+    "context",
+    "hoc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stewartml/react-context-helpers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stewartml/react-context-helpers/issues"
+  },
+  "homepage": "https://github.com/stewartml/react-context-helpers#readme"
+}
