@@ -1,112 +1,99 @@
-import * as _ from 'lodash';
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
-import getDisplayName from 'react-display-name';
 
 
-export interface ComponentDecorator<TOriginalProps, TOwnProps> {
-  (component: React.ComponentClass<TOriginalProps> | React.StatelessComponent<TOriginalProps>): React.ComponentClass<TOwnProps>;
+export class ObservableContext<TContext> {
+  private listeners: ((newContext: TContext) => any)[];
+
+  constructor(public value: TContext = null) {
+    this.listeners = [];
+  }
+
+  subscribe(listener: (newContext: TContext) => any): () => void {
+    this.listeners.push(listener);
+
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  change(newContext: TContext) {
+    this.value = newContext;
+    this.listeners.forEach((listener) => listener(newContext));
+  }
 };
 
-//export type Hash = {[key: string]: any};
-//export type ContextProps<TContext> = {[K in keyof TContext]: any};
+type Component<T> = React.ComponentClass<T> | React.StatelessComponent<T>;
 
-/**
- * 
- * @param contextTypes 
- */
-export function contextProvider<TContext, TOriginalProps = {}>(
-  contextTypes: PropTypes.ValidationMap<TContext>
-): ComponentDecorator<TOriginalProps, TContext & TOriginalProps>;
+export function contextProvider<TContext>(name: string, initialContext?: TContext) {
+  return class ContextProvider extends React.Component<TContext, {}> {
+    observableContext: ObservableContext<TContext>;
 
-export function contextProvider<TContext, TOriginalProps = {}>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  passThrough: false
-): ComponentDecorator<TOriginalProps, TContext & TOriginalProps>;
-
-export function contextProvider<TContext, TOriginalProps = {}>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  passThrough: true
-): ComponentDecorator<TContext & TOriginalProps, TContext & TOriginalProps>;
-
-export function contextProvider<TContext, TOriginalProps = {}, K extends keyof TContext = keyof TContext>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  passThrough: K[]
-): ComponentDecorator<TOriginalProps & Pick<TContext, K>, TContext & TOriginalProps>;
-/**
- * 
- * @param contextTypes 
- * @param mapPropsToContext 
- */
-export function contextProvider<TContext, TOriginalProps, TContextProps>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  mapPropsToContext: (props: TContextProps) => TContext
-): ComponentDecorator<TOriginalProps, TContextProps & TOriginalProps>;
-
-export function contextProvider<TContext, TOriginalProps, TContextProps, K extends keyof TContextProps = keyof TContextProps>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  arg2?: boolean | K[] | ((props: TContextProps) => TContext)
-) {
-  const passThrough = typeof arg2 === 'function' || arg2;
-  const mapPropsToContext = typeof arg2 === 'function' && arg2;
-
-  return (Component) => class ContextProvider extends React.Component<any, any> {
-    static childContextTypes = contextTypes;
-    static displayName = `ContextProvider(${getDisplayName(Component)})`;
+    static childContextTypes = {
+      [name]: PropTypes.object
+    };
 
     getChildContext() {
-      return mapPropsToContext ? mapPropsToContext(this.props) : _.pick(this.props, Object.keys(contextTypes));
+      return {
+        [name]: this.observableContext
+      };
+    }
+
+    componentWillMount() {
+      this.observableContext = new ObservableContext<TContext>({
+        ...initialContext as any,
+        ...this.props as any
+      });
+    }
+
+    componentWillReceiveProps(nextProps) {
+      this.observableContext.change(nextProps);
     }
 
     render() {
-      const exclude = Array.isArray(passThrough) ? passThrough : [];
-
-      const props = passThrough === true
-        ? this.props
-        : _.omit(this.props, _.difference(Object.keys(contextTypes), exclude));
-      
-      return React.createElement(Component, props);
+      return React.createElement('div', {children: this.props.children});
     }
   };
 };
 
 
-/**
- * 
- * @param contextTypes 
- */
-export function contextToProps<TContext, TOriginalProps={}>(
-  contextTypes: PropTypes.ValidationMap<TContext>
-): ComponentDecorator<TOriginalProps & TContext, TOriginalProps>;
+export function contextConsumer<TContext, TAdditionalProps={}>(name: string) {
+  return (Component: Component<TContext & TAdditionalProps>) => {
+    return class ContextConsumer extends React.Component<TAdditionalProps, TContext> {
+      unsubscribe: () => void;
 
-/**
- * 
- * @param contextTypes 
- * @param mapContextToProps 
- */
-export function contextToProps<TContext, TOriginalProps, TContextProps>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  mapContextToProps: (context: TContext) => TContextProps
-): ComponentDecorator<TOriginalProps & TContextProps, TOriginalProps>;
+      static contextTypes = {
+        [name]: PropTypes.object
+      };
 
-export function contextToProps<TContext, TOriginalProps, TContextProps>(
-  contextTypes: PropTypes.ValidationMap<TContext>,
-  mapContextToProps?: (context: TContext) => TContextProps
-) {
+      constructor(props, context) {
+        super(props, context);
+        
+        const ob: ObservableContext<TContext> = this.context[name];
+        this.state = ob ? ob.value : {} as any;
+      }
 
-  return (Component) => class WithContext extends React.Component<TOriginalProps, any> {
-    static displayName = `WithContext(${getDisplayName(Component)})`;
-    static contextTypes = contextTypes;
+      componentWillMount() {
+        const context: ObservableContext<TContext> = this.context[name];
 
-    render() {
-      let context = mapContextToProps
-        ? mapContextToProps(this.context)
-        : _.pick(this.context, Object.keys(contextTypes));
-      
-      return React.createElement(Component, {
-        ...context,
-        ...<any>this.props // https://github.com/Microsoft/TypeScript/issues/10727
-      });
-    }
+        if (context) {
+          this.unsubscribe = context.subscribe((context) => this.setState(context));
+        }
+      }
+
+      componentWillUnmount() {
+        if (this.unsubscribe) {
+          this.unsubscribe();
+          this.unsubscribe = null;
+        }
+      }
+
+      render() {
+        return React.createElement(Component as any, {
+          ...this.state as any,
+          ...this.props as any
+        });
+      }
+    };
   };
 };

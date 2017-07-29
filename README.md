@@ -2,29 +2,34 @@
 
 Helpers to convert from props to context and back again.
 
-In a nutshell, it provides two higher-order components, one for converting props to context, and one for for converting context to props.
+In the box, you get:
+
+* `contextProvider(name: string)` - creates a provider component for the given context key
+* `contextConsumer(name: string)` - creates a component decorator that will feed the context as props into the wrapped component
+
+If the context changes, the consumers are notified of the change.
+
+_Rewritten entirely from v1.0 as this was fundamentally broken._
 
 ## Usage
 
 Install:
 
-    $ yarn add react-context-helpers
+    $ npm install --save react-context-helpers
 
 Import, then define your components:
 
 ```js
-import { contextProvider, contextToProps } from 'react-context-helpers';
+import { contextProvider, contextConsumer } from 'react-context-helpers';
 
-const contextTypes = {
-  colour: React.PropTypes.string
-};
+interface ThemeContext {
+  colour: string;
+}
 
 // define a context provider and a context consumer
-const Theme = contextProvider(contextTypes)(
-  (props) => <div>{props.children}</div>
-);
+const Theme = contextProvider<ThemeContext>('theme');
 
-const ColouredButton = contextToProps(contextTypes)(
+const ColouredButton = contextConsumer<ThemeContext>('theme')(
   (props) => <button style={{background: props.colour}}>{props.children}</button>
 );
 
