@@ -1,5 +1,6 @@
-import * as React from 'react';
+import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
+import * as React from 'react';
 
 
 export class ObservableContext<TContext> {
@@ -25,7 +26,7 @@ export class ObservableContext<TContext> {
 
 type Component<T> = React.ComponentClass<T> | React.StatelessComponent<T>;
 
-export function contextProvider<TContext>(name: string, initialContext?: TContext) {
+export function contextProvider<TContext>(name: string, keys: [keyof TContext], initialContext?: TContext) {
   return class ContextProvider extends React.Component<TContext, {}> {
     observableContext: ObservableContext<TContext>;
 
@@ -47,7 +48,7 @@ export function contextProvider<TContext>(name: string, initialContext?: TContex
     }
 
     componentWillReceiveProps(nextProps) {
-      this.observableContext.change(nextProps);
+      this.observableContext.change(_.pick(nextProps, keys));
     }
 
     render() {

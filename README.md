@@ -4,7 +4,7 @@ Helpers to convert from props to context and back again.
 
 In the box, you get:
 
-* `contextProvider(name: string)` - creates a provider component for the given context key
+* `contextProvider(name: string, keys: string[])` - creates a provider component for the given context key
 * `contextConsumer(name: string)` - creates a component decorator that will feed the context as props into the wrapped component
 
 If the context changes, the consumers are notified of the change.

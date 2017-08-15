@@ -11,7 +11,7 @@ interface TestContext {
 }
 
 test('contextProvider / contextConsumer', (t) => {
-  const Provider = contextProvider<TestContext>('test');
+  const Provider = contextProvider<TestContext>('test', ['foo']);
 
   const Consumer = contextConsumer<TestContext>('test')(
     (props) => <span>{props.foo}</span>
