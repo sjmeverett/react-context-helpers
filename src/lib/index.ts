@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import * as pick from 'lodash.pick';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
@@ -43,12 +43,12 @@ export function contextProvider<TContext>(name: string, keys: [keyof TContext], 
     componentWillMount() {
       this.observableContext = new ObservableContext<TContext>({
         ...initialContext as any,
-        ...this.props as any
+        ...pick(this.props as any, keys)
       });
     }
 
     componentWillReceiveProps(nextProps) {
-      this.observableContext.change(_.pick(nextProps, keys));
+      this.observableContext.change(pick(nextProps, keys));
     }
 
     render() {
